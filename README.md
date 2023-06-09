@@ -37,11 +37,16 @@ context manager:
 ...     # only this call will be profiled
 ...     profile_this(100_000_000)
 ...
+profile: attach
 profile: call
 profile: return
 4999999950000000
+profile: detach
 
 ```
+
+The `easyprofile` profiler generates two non-standard events `attach` and
+`detach` when the profile function is attached and detached, respectively.
 
 ### Ignoring calls
 
@@ -57,10 +62,12 @@ context manager:
 ...         # this call will be ignored
 ...         profile_this(100)
 ...
+profile: attach
 profile: call
 profile: return
 4999999950000000
 4950
+profile: detach
 
 ```
 
@@ -83,7 +90,9 @@ decorator:
 >>> with easyprofile.profile(myfunc):
 ...     ignored_func()
 ...
+profile: attach
 42
+profile: detach
 
 ```
 
@@ -102,12 +111,18 @@ event `<event>` is encountered, with a signature of `frame, arg`.
 ...     def __init__(self, arg, *, kwarg):
 ...         print(f'MyProfile: init, {arg=}, {kwarg=}')
 ...
+...     def _attach(self, frame, arg):
+...         print('MyProfile: attached')
+...
+...     def _detach(self, frame, arg):
+...         print('MyProfile: detached')
+...
 ...     def _call(self, frame, arg):
 ...         print('MyProfile: function called')
-... 
+...
 ...     def _return(self, frame, arg):
 ...         print('MyProfile: function returned')
-... 
+...
 ...     # profile C extension calls using the same methods
 ...     _c_call = _call
 ...     _c_return = _return
@@ -124,8 +139,10 @@ method, which forwards its arguments to the constructor:
 ...     profile_this(100_000_000)
 ...
 MyProfile: init, arg='hello', kwarg='world'
+MyProfile: attached
 MyProfile: function called
 MyProfile: function returned
 4999999950000000
+MyProfile: detached
 
 ```

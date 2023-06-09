@@ -75,7 +75,7 @@ def test_profile():
 
     assert call.call_count == call.side_effect.call_count == 3
     assert prof.call_count == 4
-    assert prof.call_args_list[0].args == (f_inner(frame), 'attach', None)
+    assert prof.call_args_list[0].args == (frame, 'attach', None)
     assert prof.call_args_list[1].args == (f_inner(frame), 'call', None)
     assert prof.call_args_list[2].args == (f_inner(frame), 'return',
                                            call.side_effect.return_value)
@@ -98,7 +98,7 @@ def test_ignore():
 
     assert call.call_count == 3
     assert prof.call_count == 6
-    assert prof.call_args_list[0].args == (f_inner(frame), 'attach', None)
+    assert prof.call_args_list[0].args == (frame, 'attach', None)
     assert prof.call_args_list[1].args == (f_inner(frame), 'call', None)
     assert prof.call_args_list[2].args == (f_inner(frame), 'return',
                                            call.return_value)
