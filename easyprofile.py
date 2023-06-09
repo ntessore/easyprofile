@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.0.0'
+__version__ = '0.1.0'
 
 __all__ = (
     'BaseProfile',
@@ -69,6 +69,7 @@ class profile:
                             func(frame, event, arg)
 
                     setprofile(prof)
+                    func(scope, 'attach', None)
         else:
             trap = None
 
@@ -78,6 +79,8 @@ class profile:
 
     @ignored
     def __exit__(self, *args: Any) -> None:
+        if self.func is not None:
+            self.func(None, 'detach', None)
         setprofile(self.stack.pop())
 
 
@@ -101,6 +104,13 @@ class LogProfile(BaseProfile):
     def __init__(self, log: Callable[[str], Any]) -> None:
         self.log = log
         self.counts: dict[FrameType, float] = {}
+        self.frame: FrameType | None = None
+
+    def _attach(self, frame: FrameType, arg: Any) -> None:
+        self.frame = frame
+
+    def _detach(self, frame: FrameType, arg: Any) -> None:
+        self.frame = None
 
     def _call(self, frame: FrameType, arg: Any) -> None:
         self.counts[frame] = perf_counter()
@@ -120,6 +130,8 @@ class LogProfile(BaseProfile):
             if qualname.endswith(name):
                 name = qualname
             names.append(name)
+            if f == self.frame:
+                break
             f = f.f_back
         name = ' > '.join(names[-2::-1])
 
