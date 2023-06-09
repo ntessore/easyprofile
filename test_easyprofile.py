@@ -74,12 +74,10 @@ def test_profile():
     setprofile(None)
 
     assert call.call_count == call.side_effect.call_count == 3
-    assert prof.call_count == 4
-    assert prof.call_args_list[0].args == (frame, 'attach', None)
-    assert prof.call_args_list[1].args == (f_inner(frame), 'call', None)
-    assert prof.call_args_list[2].args == (f_inner(frame), 'return',
+    assert prof.call_count == 2
+    assert prof.call_args_list[0].args == (f_inner(frame), 'call', None)
+    assert prof.call_args_list[1].args == (f_inner(frame), 'return',
                                            call.side_effect.return_value)
-    assert prof.call_args_list[3].args == (None, 'detach', None)
 
 
 def test_ignore():
@@ -97,15 +95,13 @@ def test_ignore():
         call()
 
     assert call.call_count == 3
-    assert prof.call_count == 6
-    assert prof.call_args_list[0].args == (frame, 'attach', None)
-    assert prof.call_args_list[1].args == (f_inner(frame), 'call', None)
-    assert prof.call_args_list[2].args == (f_inner(frame), 'return',
+    assert prof.call_count == 4
+    assert prof.call_args_list[0].args == (f_inner(frame), 'call', None)
+    assert prof.call_args_list[1].args == (f_inner(frame), 'return',
                                            call.return_value)
-    assert prof.call_args_list[3].args == (f_inner(frame), 'call', None)
-    assert prof.call_args_list[4].args == (f_inner(frame), 'return',
+    assert prof.call_args_list[2].args == (f_inner(frame), 'call', None)
+    assert prof.call_args_list[3].args == (f_inner(frame), 'return',
                                            call.return_value)
-    assert prof.call_args_list[5].args == (None, 'detach', None)
 
 
 def test_base_profile():
@@ -119,8 +115,6 @@ def test_base_profile():
 
     class TestProfile(easyprofile.BaseProfile):
         __init__ = staticmethod(Mock(return_value=None))
-        _attach = staticmethod(Mock())
-        _detach = staticmethod(Mock())
         _call = staticmethod(Mock())
         _return = staticmethod(Mock())
 
@@ -129,7 +123,5 @@ def test_base_profile():
         call()
 
     TestProfile.__init__.assert_called_once_with(0, kw=1)
-    assert TestProfile._attach.call_count == 1
-    assert TestProfile._detach.call_count == 1
     assert TestProfile._call.call_count == 2
     assert TestProfile._return.call_count == 2

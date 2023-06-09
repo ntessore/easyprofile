@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 __all__ = (
     'BaseProfile',
@@ -93,7 +93,6 @@ class profile:
                             func(frame, event, arg)
 
                     setprofile(prof)
-                    func(scope, 'attach', None)
         else:
             trap = None
 
@@ -103,8 +102,6 @@ class profile:
 
     @ignored
     def __exit__(self, *args: Any) -> None:
-        if self.func is not None:
-            self.func(None, 'detach', None)
         setprofile(self.stack.pop())
 
 

@@ -37,16 +37,11 @@ context manager:
 ...     # only this call will be profiled
 ...     profile_this(100_000_000)
 ...
-profile: attach
 profile: call
 profile: return
 4999999950000000
-profile: detach
 
 ```
-
-The `easyprofile` profiler generates two non-standard events `attach` and
-`detach` when the profile function is attached and detached, respectively.
 
 ### Ignoring calls
 
@@ -62,12 +57,10 @@ context manager:
 ...         # this call will be ignored
 ...         profile_this(100)
 ...
-profile: attach
 profile: call
 profile: return
 4999999950000000
 4950
-profile: detach
 
 ```
 
@@ -90,9 +83,7 @@ decorator:
 >>> with easyprofile.profile(myfunc):
 ...     ignored_func()
 ...
-profile: attach
 42
-profile: detach
 
 ```
 
@@ -139,10 +130,8 @@ method, which forwards its arguments to the constructor:
 ...     profile_this(100_000_000)
 ...
 MyProfile: init, arg='hello', kwarg='world'
-MyProfile: attached
 MyProfile: function called
 MyProfile: function returned
 4999999950000000
-MyProfile: detached
 
 ```
