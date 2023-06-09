@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 __all__ = (
     'BaseProfile',
@@ -14,8 +14,8 @@ __all__ = (
 )
 
 import tracemalloc
-from sys import getprofile, setprofile
 from datetime import timedelta
+from sys import getprofile, setprofile
 from time import perf_counter
 from types import FrameType
 from typing import Any, Callable
@@ -33,6 +33,18 @@ def fnb(n: int) -> str:
             break
         x /= 1000
     return f'{x:.3f}'[:5] + u
+
+
+def fname(frame):
+    '''Return the function name from a frame.'''
+    name = frame.f_code.co_name
+    try:
+        qualname = frame.f_code.co_qualname
+    except AttributeError:
+        qualname = name
+    if qualname.endswith(name):
+        name = qualname
+    return name
 
 
 def ignored(func):
@@ -103,37 +115,24 @@ class LogProfile(BaseProfile):
 
     def __init__(self, log: Callable[[str], Any]) -> None:
         self.log = log
-        self.counts: dict[FrameType, float] = {}
+        self.counts: dict[int, float] = {}
         self.frame: FrameType | None = None
 
     def _attach(self, frame: FrameType, arg: Any) -> None:
         self.frame = frame
 
     def _detach(self, frame: FrameType, arg: Any) -> None:
+        self.counts.clear()
         self.frame = None
 
     def _call(self, frame: FrameType, arg: Any) -> None:
-        self.counts[frame] = perf_counter()
+        self.counts[hash(frame)] = perf_counter()
 
     def _return(self, frame: FrameType, arg: Any) -> None:
         count = perf_counter()
-        delta = count - self.counts.get(frame, count)
+        delta = count - self.counts.pop(hash(frame), count)
 
-        names = []
-        f: FrameType | None = frame
-        while f:
-            name = f.f_code.co_name
-            try:
-                qualname = f.f_code.co_qualname
-            except AttributeError:
-                qualname = name
-            if qualname.endswith(name):
-                name = qualname
-            names.append(name)
-            if f == self.frame:
-                break
-            f = f.f_back
-        name = ' > '.join(names[-2::-1])
+        name = fname(frame)
 
         parr = []
         if delta > 0:
