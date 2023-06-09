@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 __all__ = (
     'BaseProfile',
@@ -40,6 +40,18 @@ def fname(frame):
     name = frame.f_code.co_name
     try:
         qualname = frame.f_code.co_qualname
+    except AttributeError:
+        qualname = name
+    if qualname.endswith(name):
+        name = qualname
+    return name
+
+
+def cname(func):
+    '''Return the function name from a C function.'''
+    name = func.__name__
+    try:
+        qualname = func.__qualname__
     except AttributeError:
         qualname = name
     if qualname.endswith(name):
@@ -116,40 +128,38 @@ class LogProfile(BaseProfile):
     def __init__(self, log: Callable[[str], Any]) -> None:
         self.log = log
         self.counts: dict[int, float] = {}
-        self.frame: FrameType | None = None
 
-    def _attach(self, frame: FrameType, arg: Any) -> None:
-        self.frame = frame
+    def __start(self, obj: Any) -> None:
+        self.counts[hash(obj)] = perf_counter()
 
-    def _detach(self, frame: FrameType, arg: Any) -> None:
-        self.counts.clear()
-        self.frame = None
-
-    def _call(self, frame: FrameType, arg: Any) -> None:
-        self.counts[hash(frame)] = perf_counter()
-
-    def _return(self, frame: FrameType, arg: Any) -> None:
+    def __stop(self, obj: Any) -> float:
         count = perf_counter()
-        delta = count - self.counts.pop(hash(frame), count)
+        return count - self.counts.pop(hash(obj), count)
 
-        name = fname(frame)
-
+    def __log(self, time: float, name: str) -> None:
         parr = []
-        if delta > 0:
-            parr += [f'{timedelta(seconds=delta)!s}']
+        if time > 0:
+            parr += [f'{timedelta(seconds=time)!s}']
         if tracemalloc.is_tracing():
             mem, peak = tracemalloc.get_traced_memory()
             parr += [f'{fnb(mem)}', f'{fnb(peak)}']
-
         if parr:
             prof = '[' + ' - '.join(parr) + ']'
         else:
             prof = ''
-
         self.log(f'{prof} {name}')
 
-    _c_call = _call
-    _c_return = _return
+    def _call(self, frame: FrameType, arg: Any) -> None:
+        self.__start(frame)
+
+    def _return(self, frame: FrameType, arg: Any) -> None:
+        self.__log(self.__stop(frame), fname(frame))
+
+    def _c_call(self, frame: FrameType, arg: Any) -> None:
+        self.__start(arg)
+
+    def _c_return(self, frame: FrameType, arg: Any) -> None:
+        self.__log(self.__stop(arg), cname(arg))
 
 
 log = LogProfile.profile
