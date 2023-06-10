@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 __all__ = (
     'BaseProfile',
@@ -33,6 +33,21 @@ def fnb(n: int) -> str:
             break
         x /= 1000
     return f'{x:.3f}'[:5] + u
+
+
+def ftd(time: float | None) -> str:
+    '''Format time difference.'''
+    if time is None:
+        return '--:--:--.------'
+    td = timedelta(seconds=time)
+    mm, ss = divmod(td.seconds, 60)
+    hh, mm = divmod(mm, 60)
+    uu = td.microseconds
+    if td.days:
+        dd = f'{td.days} day{"s" if abs(td.days) != 1 else ""}, '
+    else:
+        dd = ''
+    return f'{dd}{hh:02d}:{mm:02d}:{ss:02d}.{uu:06d}'
 
 
 def fname(frame):
@@ -134,26 +149,24 @@ class LogProfile(BaseProfile):
         return count - self.counts.pop(hash(obj), count)
 
     def __log(self, time: float, name: str) -> None:
-        parr = []
-        if time > 0:
-            parr += [f'{timedelta(seconds=time)!s}']
+        line = []
         if tracemalloc.is_tracing():
-            mem, peak = tracemalloc.get_traced_memory()
-            parr += [f'{fnb(mem)}', f'{fnb(peak)}']
-        if parr:
-            prof = '[' + ' - '.join(parr) + ']'
-        else:
-            prof = ''
-        self.log(f'{prof} {name}')
+            current, peak = tracemalloc.get_traced_memory()
+            line.append(f'[{fnb(current)} / {fnb(peak)}]')
+        line.append('>' if time is None else '<')
+        line.append(name)
+        if time is not None:
+            line.append(f'[{ftd(time)}]')
+        self.log(' '.join(line))
 
     def _call(self, frame: FrameType, arg: Any) -> None:
-        self.__start(frame)
+        self.__log(self.__start(frame), fname(frame))
 
     def _return(self, frame: FrameType, arg: Any) -> None:
         self.__log(self.__stop(frame), fname(frame))
 
     def _c_call(self, frame: FrameType, arg: Any) -> None:
-        self.__start(arg)
+        self.__log(self.__start(arg), cname(arg))
 
     def _c_return(self, frame: FrameType, arg: Any) -> None:
         self.__log(self.__stop(arg), cname(arg))
