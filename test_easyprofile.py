@@ -41,12 +41,12 @@ def test_fnb():
 
 
 def test_ftd():
-    assert easyprofile.ftd(None)    == '--:--:--.------'
-    assert easyprofile.ftd(0.)      == '00:00:00.000000'
-    assert easyprofile.ftd(0.5)     == '00:00:00.500000'
-    assert easyprofile.ftd(1.0)     == '00:00:01.000000'
-    assert easyprofile.ftd(61.0)    == '00:01:01.000000'
-    assert easyprofile.ftd(3661.0)  == '01:01:01.000000'
+    assert easyprofile.ftd(None) == '--:--:--.------'
+    assert easyprofile.ftd(0.) == '00:00:00.000000'
+    assert easyprofile.ftd(0.5) == '00:00:00.500000'
+    assert easyprofile.ftd(1.0) == '00:00:01.000000'
+    assert easyprofile.ftd(61.0) == '00:01:01.000000'
+    assert easyprofile.ftd(3661.0) == '01:01:01.000000'
 
 
 def test_ignored():
